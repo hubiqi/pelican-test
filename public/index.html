@@ -170,12 +170,15 @@
         D.t = startT;
         D.frozen = paused;
         D.frozenT = startT;
+        D.pin = paused ? startT : null;
         D.playing = !paused;
         if (paused && startT > B.BLOCKS_END - 3) D.bakeAll();
         syncUI();
         window.__READY__ = true;
       };
+      let fitted = 0;
       p.draw = function () {
+        if (fitted < 3 && window.__FIT__) { window.__FIT__(); fitted++; }
         D.tick(p);
         if (p.frameCount % 3 === 0) syncUI();
         if (hudOn) {

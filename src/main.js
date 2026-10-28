@@ -16,7 +16,7 @@
 
   const D = {
     p: null, buf: null, bakes: [], bakeSize: 512, bakeNext: 0, ready: false,
-    playing: true, t: 0, tOffset: 0, onTime: null, opts: {},
+    playing: true, t: 0, tOffset: 0, onTime: null, opts: {}, pin: null,
   };
 
   function sceneList() {
@@ -121,7 +121,9 @@
     const now = p.millis();
     const dt = lastMs ? Math.min(0.1, (now - lastMs) / 1000) : 0;
     lastMs = now;
-    if (D.frozen) {
+    if (D.pin !== null && D.pin !== undefined) {
+      D.t = D.pin;                 // ★ 钉住：?t= 或拖动进度条后，任何东西都不能让时间走
+    } else if (D.frozen) {
       D.t = D.frozenT;
     } else if (D.playing) {
       D.t += dt;
@@ -136,7 +138,9 @@
   function seek(t) {
     D.t = Math.max(0, Math.min(B.TOTAL - 1e-3, t));
     D.frozenT = D.t;
+    D.pin = D.t;
   }
+  function unpin() { D.pin = null; }
   function freeze(t) { D.frozen = true; seek(t); }
   function unfreeze() { D.frozen = false; }
 
@@ -144,8 +148,8 @@
     W, H, D, init, renderFrame, tick, seek, sceneList, sceneByIndex, makeCtx,
     get t() { return D.t; },
     set t(v) { D.t = v; },
-    freeze, unfreeze,
-    play: function () { D.playing = true; },
+    freeze, unfreeze, unpin,
+    play: function () { D.pin = null; D.frozen = false; D.playing = true; },
     pause: function () { D.playing = false; },
     isPlaying: function () { return D.playing; },
     bakeAll: function () { while (D.bakeNext < 20) bakeOne(D.bakeNext++); },
