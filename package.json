@@ -1,0 +1,19 @@
+{
+  "name": "pelican-test",
+  "version": "0.1.0",
+  "description": "The Pelican Test — a procedurally drawn short film in 20 art styles",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "serve": "node tools/serve.mjs",
+    "shot": "node tools/shot.mjs",
+    "sheet": "node tools/sheet.mjs",
+    "render": "node tools/render.mjs"
+  },
+  "dependencies": {
+    "p5": "^2.3.4",
+    "p5.brush": "^2.2.3",
+    "puppeteer-core": "^25.12.0"
+  }
+}

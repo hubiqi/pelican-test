@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>接触表 · Contact Sheet</title>
+<style>
+  html, body { margin: 0; background: #141414; color: #ddd; font: 12px ui-monospace, monospace; }
+  #grid { display: block; }
+</style>
+</head>
+<body>
+<canvas id="grid"></canvas>
+<script>
+  window.__ERRS__ = [];
+  window.addEventListener('error', function (e) { window.__ERRS__.push(e.message); });
+</script>
+<script src="vendor/p5.min.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const V = q.get('v') === '0' ? '0' : String(Date.now());
+  const FILES = [
+    '../src/beat.js', '../src/kit.js', '../src/rig.js', '../src/camera.js',
+    '../src/scenes/_placeholder.js', '../src/scenes/intro.js',
+    '../src/scenes/s01-sahara.js', '../src/scenes/s02-egypt.js', '../src/scenes/s03-hanstone.js',
+    '../src/scenes/s04-tang.js', '../src/scenes/s05-song.js', '../src/scenes/s06-qingming.js',
+    '../src/scenes/s07-maya.js', '../src/scenes/s08-mughal.js', '../src/scenes/s09-bada.js',
+    '../src/scenes/s10-wayang.js', '../src/scenes/s11-ukiyoe.js', '../src/scenes/s12-vangogh.js',
+    '../src/scenes/s13-scream.js', '../src/scenes/s14-nosferatu.js', '../src/scenes/s15-scope.js',
+    '../src/scenes/s16-8bit.js', '../src/scenes/s17-chat.js', '../src/scenes/s18-vaporwave.js',
+    '../src/scenes/s19-vertical.js', '../src/scenes/s20-code.js', '../src/scenes/outro.js',
+    '../src/main.js',
+  ];
+  function loadOne(src) {
+    return new Promise(function (res, rej) {
+      const s = document.createElement('script');
+      s.src = src + (V === '0' ? '' : '?v=' + V);
+      s.onload = res; s.onerror = function () { rej(new Error('load fail ' + src)); };
+      document.body.appendChild(s);
+    });
+  }
+  (async function () {
+    for (const f of FILES) await loadOne(f);
+    run(q);
+  })();
+
+  function run(q) {
+    const D = PEL.director, B = PEL.beat;
+    const cols = parseInt(q.get('cols') || '4', 10);
+    const cellW = parseInt(q.get('w') || '480', 10);
+    const cellH = Math.round(cellW * 1080 / 1920);
+    const label = parseInt(q.get('label') || '1', 10);
+    const pad = 6;
+    let times = (q.get('t') || '1,7,13,19').split(',').map(parseFloat).filter(function (v) { return !isNaN(v); });
+    if (q.get('every')) {
+      const step = parseFloat(q.get('every'));
+      times = [];
+      for (let t = parseFloat(q.get('from') || '0'); t <= parseFloat(q.get('to') || String(B.TOTAL)); t += step) times.push(t);
+    }
+    const rows = Math.ceil(times.length / cols);
+    const W = cols * (cellW + pad) + pad;
+    const H = rows * (cellH + (label ? 16 : 0) + pad) + pad;
+
+    const c = document.getElementById('grid');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#141414'; ctx.fillRect(0, 0, W, H);
+
+    const off = document.createElement('canvas');
+    off.width = 1920; off.height = 1080;
+    off.style.display = 'none';
+    document.body.appendChild(off);
+
+    const p = new p5(function (inst) {
+      inst.setup = function () {
+        inst.noCanvas();
+        D.init(inst, { bakeSize: parseInt(q.get('bake') || '200', 10) });
+        D.bakeAll();
+        for (let i = 0; i < times.length; i++) {
+          const t = times[i];
+          const g = inst.createGraphics(1920, 1080);
+          g.pixelDensity(1);
+          D.renderFrame(g, t);
+          const col = i % cols, row = Math.floor(i / cols);
+          const x = pad + col * (cellW + pad);
+          const y = pad + row * (cellH + (label ? 16 : 0) + pad);
+          ctx.drawImage(g.canvas, x, y, cellW, cellH);
+          if (label) {
+            ctx.fillStyle = '#9c958a';
+            const info = B.blockAt(t);
+            const sc = info.index >= 1 && info.index <= 20 ? D.sceneByIndex(info.index) : null;
+            ctx.fillText('t=' + t.toFixed(2) + 's  blk=' + info.index + (sc ? '  ' + sc.zh : ''), x + 2, y + cellH + 12);
+          }
+          g.remove();
+          console.log('rendered', t, 'errors', (window.__ERRS__ || []).length);
+        }
+        window.__READY__ = true;
+      };
+    });
+  }
+})();
+</script>
+</body>
+</html>
